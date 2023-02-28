@@ -1,5 +1,6 @@
 package org.codebase.myam
 
+import android.database.DataSetObserver
 import android.os.Bundle
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -20,7 +21,7 @@ class AnotherActivity : AppCompatActivity() {
 
         binding = ActivityAnotherBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        val sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)
+        val sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager, binding.searchText)
         val viewPager: ViewPager = binding.viewPager
         viewPager.adapter = sectionsPagerAdapter
         val tabs: TabLayout = binding.tabs
