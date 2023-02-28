@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">MyAppManager</string>
+    <string name="installed_apps_tab_text">Installed Apps</string>
+    <string name="system_apps_tab_text">System Apps</string>
 </resources>
