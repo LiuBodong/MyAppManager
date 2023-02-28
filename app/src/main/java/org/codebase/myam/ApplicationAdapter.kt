@@ -2,6 +2,7 @@ package org.codebase.myam
 
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,6 +19,8 @@ class ApplicationAdapter(
     private val packageManager: PackageManager?
 ) :
     RecyclerView.Adapter<ApplicationAdapter.ViewHolder>() {
+
+    private val TAG: String = BuildConfig.APPLICATION_ID
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById<ImageView>(R.id.app_icon)
@@ -64,7 +67,7 @@ class ApplicationAdapter(
             out.flush()
             while (bufferedReader.ready()) {
                 val line = bufferedReader.readLine() ?: break
-                println(line)
+                Log.i(TAG, line)
             }
             bufferedReader.close()
             val exitVal = process.waitFor()
