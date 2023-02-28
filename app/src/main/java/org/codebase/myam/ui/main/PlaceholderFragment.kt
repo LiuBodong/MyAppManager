@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.RecyclerView
 import org.codebase.myam.ApplicationAdapter
 import org.codebase.myam.BuildConfig
 import org.codebase.myam.databinding.FragmentAnotherBinding
+import java.text.Collator
+import java.util.*
 
 /**
  * A placeholder fragment containing a simple view.
@@ -25,6 +27,7 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
 
     private lateinit var pageViewModel: PageViewModel
     private var _binding: FragmentAnotherBinding? = null
+    private lateinit var comparator: Comparator<ApplicationInfo>
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -41,11 +44,21 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
                 val index = arguments?.getInt(ARG_SECTION_NUMBER, 0)
                 setIndex(index ?: 0)
             }
-            val comparator: Comparator<ApplicationInfo> = Comparator { o1, o2 ->
+            comparator = Comparator { o1, o2 ->
                 val enabledSort = o1.enabled.compareTo(o2.enabled)
                 if (enabledSort == 0) {
-                    o1.loadLabel(pm).toString()
-                        .compareTo(o2.loadLabel(pm).toString(), true)
+                    val s1 = o1.loadLabel(pm).toString()
+                    val s2 = o2.loadLabel(pm).toString()
+                    if (s1[0].isLetterOrDigit() && s2[0].isLetterOrDigit()) {
+                        s1.compareTo(s2)
+                    } else if (s1[0].isLetterOrDigit() && !s2[0].isLetterOrDigit()) {
+                        +1
+                    } else if (!s1[0].isLetterOrDigit() && s2[0].isLetterOrDigit()) {
+                        -1
+                    } else {
+                        Collator.getInstance(Locale.SIMPLIFIED_CHINESE)
+                            .compare(s1, s2)
+                    }
                 } else {
                     enabledSort
                 }
@@ -67,10 +80,10 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
                 }
             }
         }
-        textView.addTextChangedListener(MyTextWatcher(pageViewModel, pm))
+        textView.addTextChangedListener(MyTextWatcher())
     }
 
-    class MyTextWatcher(private val pageViewModel: PageViewModel, private val pm: PackageManager) :
+    inner class MyTextWatcher :
         TextWatcher {
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
 
@@ -89,7 +102,7 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
                         searh,
                         true
                     ) || a.loadLabel(pm).contains(searh, true)
-                }
+                }.sortedWith(comparator)
             }
             pageViewModel.setFilteredAppList(applicationInfos)
         }
