@@ -1,6 +1,7 @@
 package org.codebase.myam
 
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
@@ -48,9 +49,9 @@ class ApplicationAdapter(
         holder.icon.setImageDrawable(icon)
         holder.name.text = app.loadLabel(packageManager)
         if (!app.enabled) {
-            holder.name.setTextColor(Color.DKGRAY)
+            holder.name.setTextColor(Color.RED)
         } else {
-            holder.name.setTextColor(Color.WHITE)
+            holder.name.setTextColor(Color.parseColor("#3f8b00"))
         }
         holder.name.setOnClickListener { view: View ->
             val info = packageManager.getApplicationInfo(packageName, 0)
@@ -76,9 +77,9 @@ class ApplicationAdapter(
                 if (newInfo.enabled != info.enabled) {
                     if (view is TextView) {
                         if (newInfo.enabled) {
-                            view.setTextColor(Color.WHITE)
+                            view.setTextColor(Color.parseColor("#3f8b00"))
                         } else {
-                            view.setTextColor(Color.DKGRAY)
+                            view.setTextColor(Color.RED)
                         }
                     }
                     Toast.makeText(
