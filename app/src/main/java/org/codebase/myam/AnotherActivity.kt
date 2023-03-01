@@ -27,4 +27,9 @@ class AnotherActivity : AppCompatActivity() {
         val tabs: TabLayout = binding.tabs
         tabs.setupWithViewPager(viewPager)
     }
+
+    override fun onPause() {
+        super.onPause()
+        this.finish()
+    }
 }
