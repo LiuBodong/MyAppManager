@@ -1,7 +1,6 @@
 package org.codebase.myam
 
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
@@ -42,6 +41,30 @@ class ApplicationAdapter(
         return appList.size
     }
 
+    private fun disableApp(packageName: String): Int {
+        return execCmd("pm disable-user --user 0 $packageName\n")
+    }
+
+    private fun enableApp(packageName: String): Int {
+        return execCmd("pm enable --user 0 $packageName\n")
+    }
+
+    private fun execCmd(cmd: String): Int {
+        val process = Runtime.getRuntime().exec("su")
+        val out = DataOutputStream(process.outputStream)
+        val bufferedReader = BufferedReader(InputStreamReader(process.inputStream))
+        out.writeBytes(cmd)
+        out.flush()
+        out.writeBytes("exit\n")
+        out.flush()
+        while (bufferedReader.ready()) {
+            val line = bufferedReader.readLine() ?: break
+            Log.i(TAG, line)
+        }
+        bufferedReader.close()
+        return process.waitFor()
+    }
+
     override fun onBindViewHolder(holder: ApplicationAdapter.ViewHolder, position: Int) {
         val packageName = appList[position]
         val app = packageManager!!.getApplicationInfo(packageName, 0)
@@ -53,25 +76,23 @@ class ApplicationAdapter(
         } else {
             holder.name.setTextColor(Color.parseColor("#3f8b00"))
         }
+        holder.name.setOnLongClickListener { view: View ->
+            val info = packageManager.getApplicationInfo(packageName, 0)
+            if (!info.enabled) {
+                enableApp(info.packageName)
+            }
+            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            view.context.startActivity(intent)
+            true
+        }
         holder.name.setOnClickListener { view: View ->
             val info = packageManager.getApplicationInfo(packageName, 0)
-            val process = Runtime.getRuntime().exec("su")
-            val out = DataOutputStream(process.outputStream)
-            val bufferedReader = BufferedReader(InputStreamReader(process.inputStream))
-            if (info.enabled) {
-                out.writeBytes("pm disable-user --user 0 $packageName\n")
-            } else {
-                out.writeBytes("pm enable --user 0 $packageName\n")
-            }
-            out.flush()
-            out.writeBytes("exit\n")
-            out.flush()
-            while (bufferedReader.ready()) {
-                val line = bufferedReader.readLine() ?: break
-                Log.i(TAG, line)
-            }
-            bufferedReader.close()
-            val exitVal = process.waitFor()
+            val exitVal =
+                if (info.enabled) {
+                    disableApp(packageName)
+                } else {
+                    enableApp(packageName)
+                }
             if (exitVal == 0) {
                 val newInfo = packageManager.getApplicationInfo(packageName, 0)
                 if (newInfo.enabled != info.enabled) {
