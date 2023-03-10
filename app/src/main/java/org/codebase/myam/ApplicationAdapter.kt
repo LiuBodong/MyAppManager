@@ -82,7 +82,16 @@ class ApplicationAdapter(
                 enableApp(info.packageName)
             }
             val intent = packageManager.getLaunchIntentForPackage(packageName)
-            view.context.startActivity(intent)
+            if (intent == null) {
+                Toast.makeText(
+                    holder.name.context,
+                    "No Launcher found for package $packageName",
+                    Toast.LENGTH_SHORT
+                )
+                    .show()
+            } else {
+                view.context.startActivity(intent)
+            }
             true
         }
         holder.name.setOnClickListener { view: View ->
