@@ -44,43 +44,47 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
                 val index = arguments?.getInt(ARG_SECTION_NUMBER, 0)
                 setIndex(index ?: 0)
             }
-            comparator = Comparator { o1, o2 ->
-                val enabledSort = o1.enabled.compareTo(o2.enabled)
-                if (enabledSort == 0) {
-                    val s1 = o1.loadLabel(pm).toString()
-                    val s2 = o2.loadLabel(pm).toString()
-                    if (s1[0].isLetterOrDigit() && s2[0].isLetterOrDigit()) {
-                        s1.compareTo(s2)
-                    } else if (s1[0].isLetterOrDigit() && !s2[0].isLetterOrDigit()) {
-                        +1
-                    } else if (!s1[0].isLetterOrDigit() && s2[0].isLetterOrDigit()) {
-                        -1
-                    } else {
-                        Collator.getInstance(Locale.SIMPLIFIED_CHINESE)
-                            .compare(s1, s2)
-                    }
+        }
+        setAppList()
+        textView.addTextChangedListener(MyTextWatcher())
+    }
+
+    private fun setAppList() {
+        comparator = Comparator { o1, o2 ->
+            val enabledSort = o1.enabled.compareTo(o2.enabled)
+            if (enabledSort == 0) {
+                val s1 = o1.loadLabel(pm).toString()
+                val s2 = o2.loadLabel(pm).toString()
+                if (s1[0].isLetterOrDigit() && s2[0].isLetterOrDigit()) {
+                    s1.compareTo(s2)
+                } else if (s1[0].isLetterOrDigit() && !s2[0].isLetterOrDigit()) {
+                    +1
+                } else if (!s1[0].isLetterOrDigit() && s2[0].isLetterOrDigit()) {
+                    -1
                 } else {
-                    enabledSort
+                    Collator.getInstance(Locale.SIMPLIFIED_CHINESE)
+                        .compare(s1, s2)
                 }
-            }
-            when (getIndex()) {
-                0 -> {
-                    val appList = pm.getInstalledApplications(0)
-                        .filter { a -> a.packageName != BuildConfig.APPLICATION_ID && (a.flags and ApplicationInfo.FLAG_SYSTEM) != 1 }
-                        .sortedWith(comparator)
-                    setAppList(appList)
-                    setFilteredAppList(appList)
-                }
-                1 -> {
-                    val appList = pm.getInstalledApplications(0)
-                        .filter { a -> a.packageName != BuildConfig.APPLICATION_ID && (a.flags and ApplicationInfo.FLAG_SYSTEM) == 1 }
-                        .sortedWith(comparator)
-                    setAppList(appList)
-                    setFilteredAppList(appList)
-                }
+            } else {
+                enabledSort
             }
         }
-        textView.addTextChangedListener(MyTextWatcher())
+        when (pageViewModel.getIndex()) {
+            0 -> {
+                val appList = pm.getInstalledApplications(0)
+                    .filter { a -> a.packageName != BuildConfig.APPLICATION_ID && (a.flags and ApplicationInfo.FLAG_SYSTEM) != 1 }
+                    .sortedWith(comparator)
+                pageViewModel.setAppList(appList)
+                pageViewModel.setFilteredAppList(appList)
+            }
+            1 -> {
+                val appList = pm.getInstalledApplications(0)
+                    .filter { a -> a.packageName != BuildConfig.APPLICATION_ID && (a.flags and ApplicationInfo.FLAG_SYSTEM) == 1 }
+                    .sortedWith(comparator)
+                pageViewModel.setAppList(appList)
+                pageViewModel.setFilteredAppList(appList)
+            }
+        }
     }
 
     inner class MyTextWatcher :
@@ -155,5 +159,10 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onPause() {
+        super.onPause()
+        setAppList()
     }
 }
