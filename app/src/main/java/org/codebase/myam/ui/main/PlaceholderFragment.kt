@@ -125,14 +125,14 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
         }
 
         override fun afterTextChanged(s: Editable?) {
-            val searh = s.toString().trim()
+            val search = s.toString().trim()
             var applicationInfos = pageViewModel.getAppList().value!!
-            if (searh != null && searh.isNotEmpty() && searh.isNotBlank()) {
+            if (search != null && search.isNotEmpty() && search.isNotBlank()) {
                 applicationInfos = pageViewModel.getAppList().value!!.filter { a ->
                     a.packageName.contains(
-                        searh,
+                        search,
                         true
-                    ) || a.loadLabel(pm).contains(searh, true)
+                    ) || a.loadLabel(pm).contains(search, true)
                 }.sortedWith(comparator)
             }
             pageViewModel.setFilteredAppList(applicationInfos)
