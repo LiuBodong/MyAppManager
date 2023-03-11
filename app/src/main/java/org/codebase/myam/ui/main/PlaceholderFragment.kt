@@ -13,11 +13,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import net.sourceforge.pinyin4j.PinyinHelper
 import org.codebase.myam.ApplicationAdapter
 import org.codebase.myam.BuildConfig
 import org.codebase.myam.databinding.FragmentAnotherBinding
-import java.text.Collator
-import java.util.*
 
 /**
  * A placeholder fragment containing a simple view.
@@ -27,11 +26,49 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
 
     private lateinit var pageViewModel: PageViewModel
     private var _binding: FragmentAnotherBinding? = null
-    private lateinit var comparator: Comparator<ApplicationInfo>
+    private val comparator: Comparator<ApplicationInfo> = getComparator()
 
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+    private fun getComparator(): Comparator<ApplicationInfo> {
+
+        fun compareChineseByPinYin(s1: String, s2: String): Int {
+            val minLength = s1.length.coerceAtMost(s2.length)
+            for (i in 0 until minLength) {
+                val c1 = s1[i]
+                val c2 = s2[i]
+                val array1 = PinyinHelper.toHanyuPinyinStringArray(c1)
+                val array2 = PinyinHelper.toHanyuPinyinStringArray(c2)
+                // Neither is chinese
+                if (array1 == null && array2 == null) {
+                    val compareRes = c1.compareTo(c2)
+                    if (compareRes != 0) {
+                        return compareRes
+                    }
+                } else if (array1 == null && array2 != null) {
+                    return -1;
+                } else if (array1 != null && array2 == null) {
+                    return +1;
+                } else {
+                    val p1 = array1[0]
+                    val p2 = array2[0]
+                    val compareRes = p1.compareTo(p2)
+                    if (compareRes != 0) {
+                        return compareRes
+                    }
+                }
+            }
+            return s1.length - s2.length
+        }
+
+        return Comparator { o1: ApplicationInfo, o2: ApplicationInfo ->
+            val s1 = o1.loadLabel(pm).toString()
+            val s2 = o2.loadLabel(pm).toString()
+            compareChineseByPinYin(s1, s2)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,38 +86,28 @@ class PlaceholderFragment(private val pm: PackageManager, private val textView: 
         textView.addTextChangedListener(MyTextWatcher())
     }
 
+
     private fun setAppList() {
-        comparator = Comparator { o1, o2 ->
-            val enabledSort = o1.enabled.compareTo(o2.enabled)
-            if (enabledSort == 0) {
-                val s1 = o1.loadLabel(pm).toString()
-                val s2 = o2.loadLabel(pm).toString()
-                if (s1[0].isLetterOrDigit() && s2[0].isLetterOrDigit()) {
-                    s1.compareTo(s2)
-                } else if (s1[0].isLetterOrDigit() && !s2[0].isLetterOrDigit()) {
-                    +1
-                } else if (!s1[0].isLetterOrDigit() && s2[0].isLetterOrDigit()) {
-                    -1
-                } else {
-                    Collator.getInstance(Locale.SIMPLIFIED_CHINESE)
-                        .compare(s1, s2)
-                }
-            } else {
-                enabledSort
-            }
-        }
         when (pageViewModel.getIndex()) {
             0 -> {
-                val appList = pm.getInstalledApplications(0)
+                val installedAppList = pm.getInstalledApplications(0)
                     .filter { a -> a.packageName != BuildConfig.APPLICATION_ID && (a.flags and ApplicationInfo.FLAG_SYSTEM) != 1 }
-                    .sortedWith(comparator)
+                val enabledAppList =
+                    installedAppList.filter { o -> o.enabled }.sortedWith(comparator)
+                val disabledAppList =
+                    installedAppList.filter { o -> !o.enabled }.sortedWith(comparator)
+                val appList = disabledAppList + enabledAppList
                 pageViewModel.setAppList(appList)
                 pageViewModel.setFilteredAppList(appList)
             }
             1 -> {
-                val appList = pm.getInstalledApplications(0)
+                val systemAppList = pm.getInstalledApplications(0)
                     .filter { a -> a.packageName != BuildConfig.APPLICATION_ID && (a.flags and ApplicationInfo.FLAG_SYSTEM) == 1 }
                     .sortedWith(comparator)
+                val enabledAppList = systemAppList.filter { o -> o.enabled }.sortedWith(comparator)
+                val disabledAppList =
+                    systemAppList.filter { o -> !o.enabled }.sortedWith(comparator)
+                val appList = disabledAppList + enabledAppList
                 pageViewModel.setAppList(appList)
                 pageViewModel.setFilteredAppList(appList)
             }
