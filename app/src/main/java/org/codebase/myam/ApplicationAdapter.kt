@@ -1,5 +1,6 @@
 package org.codebase.myam
 
+import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.util.Log
@@ -70,11 +71,42 @@ class ApplicationAdapter(
         val app = packageManager!!.getApplicationInfo(packageName, 0)
         val icon = app.loadIcon(packageManager)
         holder.icon.setImageDrawable(icon)
-        holder.name.text = app.loadLabel(packageManager)
+        val appName = app.loadLabel(packageManager)
+        holder.name.text = appName
         if (!app.enabled) {
             holder.name.setTextColor(Color.RED)
         } else {
             holder.name.setTextColor(Color.parseColor("#3f8b00"))
+        }
+        holder.icon.setOnLongClickListener { view: View ->
+            AlertDialog.Builder(view.context)
+                .setTitle("Confirm")
+                .setMessage("Are you sure to uninstall $appName?")
+                .setPositiveButton("Yes") { dialog, _ ->
+                    val uninstallRes = execCmd("pm uninstall --user 0 $packageName")
+                    if (uninstallRes == 0) {
+                        Toast.makeText(
+                            view.context,
+                            "Successfully uninstalled $appName",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    } else {
+                        Toast.makeText(
+                            view.context,
+                            "Failed to uninstall $appName",
+                            Toast.LENGTH_SHORT
+                        )
+                            .show()
+                    }
+                    dialog.dismiss()
+                }
+                .setNegativeButton("No") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .create()
+                .show()
+            true
         }
         holder.name.setOnLongClickListener { view: View ->
             val info = packageManager.getApplicationInfo(packageName, 0)
